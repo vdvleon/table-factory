@@ -1,13 +1,14 @@
 import React, { PropTypes } from 'react'
-
-import merge from 'lodash/merge'
-import map from 'lodash/map'
-import isArray from 'lodash/isArray'
-import isPlainObject from 'lodash/isPlainObject'
-import toArray from 'lodash/toArray'
-import isString from 'lodash/isString'
-import isFunction from 'lodash/isFunction'
-import omit from 'lodash/omit'
+import {
+  merge,
+  map,
+  isArray,
+  isPlainObject,
+  toArray,
+  isString,
+  isFunction,
+  omit
+} from 'lodash'
 
 /**
  * Helper to quickly generate tables based on columns and data

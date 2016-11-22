@@ -1,3 +1,4 @@
 {
+  "plugins": ["transform-runtime", "remove-comments", "transform-react-jsx", "syntax-async-functions"],
   "presets": ["es2015", "stage-2"]
 }
