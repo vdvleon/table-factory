@@ -1,8 +1,6 @@
 import React, { PropTypes } from 'react'
 import {
-  merge,
   map,
-  isArray,
   isPlainObject,
   toArray,
   isString,
