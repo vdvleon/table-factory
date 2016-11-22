@@ -68,7 +68,7 @@ export default class TableFactory extends React.Component {
     return toArray(map(columns, (col, key) => {
       if (!isPlainObject(col)) col = {title: col}
       if (isString(key)) col.key = key
-      if (!col.title) col.title = col.key
+      if (typeof col.title === 'undefined') col.title = col.key
       return col
     }))
   }
