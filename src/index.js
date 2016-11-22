@@ -115,35 +115,37 @@ class TableFactory extends React.Component {
     const { elemProps = {} } = this.props
     const { thead: theadProps, tr: trProps, th: thProps } = elemProps
 
-    return <thead {...this.constructor.normalizeElemProps(theadProps, data, columns)}>
-      <tr {...this.constructor.normalizeElemProps(trProps, true, null, 0, data, columns)}>
-        {_.map(columns, col => {
-          return React.isValidElement(col.header)
-            ? React.cloneElement(
-              col.header,
-              {
-                key: col.key,
-                ...this.constructor.normalizeElemProps(
-                  elemProps[col.header.type || 'th'],
-                  col,
-                  data,
-                  columns
-                ),
-                ...(col.props || {}),
-                ...(col.thProps || {})
-              }
-            )
-            : <th
-              key={col.key}
-              {...this.constructor.normalizeElemProps(thProps, col, data, columns)}
-              {...(col.props || {})}
-              {...(col.thProps || {})}
-            >
-              {col.title}
-            </th>
-        })}
-      </tr>
-    </thead>
+    return (
+      <thead {...this.constructor.normalizeElemProps(theadProps, data, columns)}>
+        <tr {...this.constructor.normalizeElemProps(trProps, true, null, 0, data, columns)}>
+          {_.map(columns, col => {
+            return React.isValidElement(col.header)
+              ? React.cloneElement(
+                col.header,
+                {
+                  key: col.key,
+                  ...this.constructor.normalizeElemProps(
+                    elemProps[col.header.type || 'th'],
+                    col,
+                    data,
+                    columns
+                  ),
+                  ...(col.props || {}),
+                  ...(col.thProps || {})
+                }
+              )
+              : <th
+                key={col.key}
+                {...this.constructor.normalizeElemProps(thProps, col, data, columns)}
+                {...(col.props || {})}
+                {...(col.thProps || {})}
+              >
+                {col.title}
+              </th>
+          })}
+        </tr>
+      </thead>
+    )
   }
 
   /**
@@ -164,29 +166,31 @@ class TableFactory extends React.Component {
         ? id(row, index)
         : (id && row[id] ? row[id] : index)
 
-    return <tbody {...this.constructor.normalizeElemProps(tbodyProps, data, columns)}>
-      {_.map(data, (row, index) =>
-        <tr
-          key={id_(row, index)}
-          onClick={this.handleRowClick.bind(this, row)}
-          {...this.constructor.normalizeElemProps(trProps, false, row, index, data, columns)}
-        >
-          {columns.map(col =>
-            <td
-              key={col.key}
-              {...this.constructor.normalizeElemProps(tdProps, col, row, index, data, columns)}
-              {...(col.props || {})}
-              {...(col.tdProps || {})}
-            >
-              {col.render
-                ? col.render(row, col, index, data, columns)
-                : row[col.key]
-              }
-            </td>
-          )}
-        </tr>
-      )}
-    </tbody>
+    return (
+      <tbody {...this.constructor.normalizeElemProps(tbodyProps, data, columns)}>
+        {_.map(data, (row, index) =>
+          <tr
+            key={id_(row, index)}
+            onClick={this.handleRowClick.bind(this, row)}
+            {...this.constructor.normalizeElemProps(trProps, false, row, index, data, columns)}
+          >
+            {columns.map(col =>
+              <td
+                key={col.key}
+                {...this.constructor.normalizeElemProps(tdProps, col, row, index, data, columns)}
+                {...(col.props || {})}
+                {...(col.tdProps || {})}
+              >
+                {col.render
+                  ? col.render(row, col, index, data, columns)
+                  : row[col.key]
+                }
+              </td>
+            )}
+          </tr>
+        )}
+      </tbody>
+    )
   }
 
   /**
@@ -206,17 +210,19 @@ class TableFactory extends React.Component {
     const normalizedColumns = this.constructor.normalizeColumns(columns)
     const normalizedData = this.constructor.normalizeData(data)
 
-    return <table
-      {...this.constructor.normalizeElemProps(
-        tableProps,
-        normalizedData,
-        normalizedColumns
-      )}
-      {...props}
-    >
-      {header ? this.renderHeader(normalizedColumns, normalizedData) : null}
-      {this.renderBody(normalizedColumns, normalizedData, header)}
-    </table>
+    return (
+      <table
+        {...this.constructor.normalizeElemProps(
+          tableProps,
+          normalizedData,
+          normalizedColumns
+        )}
+        {...props}
+      >
+        {header ? this.renderHeader(normalizedColumns, normalizedData) : null}
+        {this.renderBody(normalizedColumns, normalizedData, header)}
+      </table>
+    )
   }
 }
 
