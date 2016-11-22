@@ -1,0 +1,13 @@
+{
+  "name": "table-factory",
+  "version": "0.0.1",
+  "author": {
+    "name": "Leon van der Veen",
+    "email": "vdvleon@gmail.com",
+    "url": "http://leonvanderveen.nl/"
+  },
+  "scripts": {
+    "postversion": "git push && git push --tags"
+  },
+  "license": "MIT"
+}
