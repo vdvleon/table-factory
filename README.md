@@ -1,6 +1,6 @@
 # table-factory
 
-An easy to use <table> factory for React
+An easy to use table factory for React
 
 ## How to install
 
