@@ -1,5 +1,13 @@
 import React, { PropTypes } from 'react'
-import _ from 'lodash'
+
+import merge from 'lodash/merge'
+import map from 'lodash/map'
+import isArray from 'lodash/isArray'
+import isPlainObject from 'lodash/isPlainObject'
+import toArray from 'lodash/toArray'
+import isString from 'lodash/isString'
+import isFunction from 'lodash/isFunction'
+import omit from 'lodash/omit'
 
 /**
  * Helper to quickly generate tables based on columns and data
@@ -51,16 +59,16 @@ import _ from 'lodash'
  * or style).
  *
  */
-class TableFactory extends React.Component {
+export default class TableFactory extends React.Component {
   /**
    * Normalize 'columns' input
    *
    * @return {object[]}
    */
   static normalizeColumns (columns) {
-    return _.toArray(_.map(columns, (col, key) => {
-      if (!_.isPlainObject(col)) col = {title: col}
-      if (_.isString(key)) col.key = key
+    return toArray(map(columns, (col, key) => {
+      if (!isPlainObject(col)) col = {title: col}
+      if (isString(key)) col.key = key
       if (!col.title) col.title = col.key
       return col
     }))
@@ -72,7 +80,7 @@ class TableFactory extends React.Component {
    * @return {object[]}
    */
   static normalizeData (data) {
-    return _.toArray(data)
+    return toArray(data)
   }
 
   /**
@@ -95,9 +103,9 @@ class TableFactory extends React.Component {
    * @return object
    */
   static normalizeElemProps (props) {
-    if (_.isPlainObject(props)) {
+    if (isPlainObject(props)) {
       return props
-    } else if (_.isFunction(props)) {
+    } else if (isFunction(props)) {
       const args = [].slice.call(arguments, 1)
       return props.apply(null, args)
     } else {
@@ -118,7 +126,7 @@ class TableFactory extends React.Component {
     return (
       <thead {...this.constructor.normalizeElemProps(theadProps, data, columns)}>
         <tr {...this.constructor.normalizeElemProps(trProps, true, null, 0, data, columns)}>
-          {_.map(columns, col => {
+          {map(columns, col => {
             return React.isValidElement(col.header)
               ? React.cloneElement(
                 col.header,
@@ -162,13 +170,13 @@ class TableFactory extends React.Component {
     const { tbody: tbodyProps, tr: trProps, td: tdProps } = elemProps
 
     const id_ = (row, index) =>
-      _.isFunction(id)
+      isFunction(id)
         ? id(row, index)
         : (id && row[id] ? row[id] : index)
 
     return (
       <tbody {...this.constructor.normalizeElemProps(tbodyProps, data, columns)}>
-        {_.map(data, (row, index) =>
+        {map(data, (row, index) =>
           <tr
             key={id_(row, index)}
             onClick={this.handleRowClick.bind(this, row)}
@@ -201,7 +209,7 @@ class TableFactory extends React.Component {
   render () {
     const { columns, data, elemProps = {}, header = true, ...rest } = this.props
     const { table: tableProps } = elemProps
-    const props = _.omit(rest, [
+    const props = omit(rest, [
       'onRowClick',
       'id'
     ])

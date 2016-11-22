@@ -13,6 +13,10 @@ module.exports = {
     filename: name + '.js',
     libraryTarget: 'umd'
   },
+  externals: {
+    'react': 'commonjs react',
+    'react-dom' : 'commonjs react-dom'
+  },
   resolve: {
     extensions: ['', '.js']
   },
