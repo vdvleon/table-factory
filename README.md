@@ -4,13 +4,13 @@ An easy to use table factory for React
 
 ## How to install
 
-```
+```bash
 npm install table-factory
 ```
 
 ## How to use?
 
-```
+```jsx
 const rows = [
   {id: 1, name: 'Foo', age: 34},
   {id: 2, name: 'Bar', age: 1337}
@@ -33,7 +33,7 @@ const columns = {
 
 This example will generate:
 
-```
+```html
 <table>
   <thead>
     <tr>
