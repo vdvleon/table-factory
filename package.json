@@ -1,8 +1,12 @@
 {
   "name": "table-factory",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "An easy to use table factory for React",
-  "keywords": ["React", "table", "factory"],
+  "keywords": [
+    "React",
+    "table",
+    "factory"
+  ],
   "homepage": "http://leonvanderveen.nl",
   "bugs": "https://github.com/vdvleon/table-factory/issues",
   "repository": {
