@@ -1,6 +1,14 @@
 {
   "name": "table-factory",
   "version": "0.0.6",
+  "description": "An easy to use table factory for React",
+  "keywords": ["React", "table", "factory"],
+  "homepage": "http://leonvanderveen.nl",
+  "bugs": "https://github.com/vdvleon/table-factory/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vdvleon/table-factory.git"
+  },
   "author": {
     "name": "Leon van der Veen",
     "email": "vdvleon@gmail.com",
@@ -28,6 +36,7 @@
     "babel-plugin-transform-runtime": "^6.15.0",
     "babel-preset-es2015": "^6.18.0",
     "babel-preset-stage-2": "^6.17.0",
+    "classnames": "^2.2.5",
     "standard": "^8.5.0"
   },
   "license": "MIT"

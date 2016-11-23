@@ -1,74 +1,32 @@
 import React, { PropTypes } from 'react'
 import {
   map,
+  merge,
+  size,
+  findIndex,
   isPlainObject,
   toArray,
   isString,
   isFunction,
+  forEach,
   omit
 } from 'lodash'
 
 /**
  * Helper to quickly generate tables based on columns and data
- *
- * An example:
- * <TableFactory
- *   elemProps={{
- *     table: {className: 'table'},
- *     th: (col) => ({title: col.title})
- *   }}
- *   columns={{
- *     name: 'Name',
- *     age: {
- *       title: 'Age',
- *       render: (row, col, index, data) => <strong>{row.age} y/o</strong>
- *     },
- *     actions: {
- *       title: '',
- *       props: {style: {textAlign: 'right'}},
- *       render: row => (
- *         <span>
- *           <a href={`/user/${row.id}/edit`}>Edit/a>
- *           <a href={`/user/${row.id}/delete`}>Delete</a>
- *         </span>
- *       )
- *     }
- *   }}
- *   id='id'
- *   data={[
- *     {id: 1, name: 'Alice', age: 24},
- *     {id: 2, name: 'Bob', age: 43},
- *     {id: 666, name: 'Eve', age: 99}
- *   ]}
- * />
- *
- * The prop 'elemProps' can be used to specify props per table elemnt type. The
- * value of the prop should be an object where keys can consist of: 'table',
- * 'thead', 'tbody', 'tr', 'th' and 'td'. The value of the keys can either be an
- * object with the props or a function returning an props object. The signature
- * for this function is:
- * - 'th': (object col, array rows, object cols) => object
- * - 'td': (object col, object row, int rowIndex, array rows, object cols) => object
- * - 'tr': (bool thead, object|null row, int rowIndex, array rows, object cols) => object
- * - 'thead': (array rows, object cols) => object
- * - 'tbody': (array rows, object cols) => object
- * - 'table': (array rows, object cols) => object
- *
- * 'elemProps' is useful for styling of the table (e.g. by passing className
- * or style).
- *
  */
 export default class TableFactory extends React.Component {
   /**
    * Normalize 'columns' input
    *
+   * @param {array}|{object} columns
    * @return {object[]}
    */
   static normalizeColumns (columns) {
-    return toArray(map(columns, (col, key) => {
+    return toArray(map(columns, (col, name) => {
       if (!isPlainObject(col)) col = {title: col}
-      if (isString(key)) col.key = key
-      if (typeof col.title === 'undefined') col.title = col.key
+      if (isString(name)) col.name = name
+      if (typeof col.title === 'undefined') col.title = col.name
       return col
     }))
   }
@@ -76,6 +34,7 @@ export default class TableFactory extends React.Component {
   /**
    * Normalize 'data' input
    *
+   * @param {array}|{object} data
    * @return {object[]}
    */
   static normalizeData (data) {
@@ -89,24 +48,27 @@ export default class TableFactory extends React.Component {
    *
    * @param {object} row
    * @param {Event} e
+   * @param {Event} e
    */
   handleRowClick (row, e) {
     this.props.onRowClick && this.props.onRowClick(e, row)
   }
 
   /**
-   * Normalize elem props
+   * Evaluate elem props
    *
-   * @param object|function|null props
-   * @param any... args
+   * The the elem props is function, call it using the given arguments, return
+   * an props object otherwise.
+   *
+   * @param {object}|{function}|{null} props
+   * @param {any}... args
    * @return object
    */
-  static normalizeElemProps (props) {
+  static evalElemProps (props, ...args) {
     if (isPlainObject(props)) {
       return props
     } else if (isFunction(props)) {
-      const args = [].slice.call(arguments, 1)
-      return props.apply(null, args)
+      return props(...args)
     } else {
       return {}
     }
@@ -115,41 +77,27 @@ export default class TableFactory extends React.Component {
   /**
    * Helper to generate the {thead}
    *
-   * @param {object[]} columns
+   * @param {object} columns
+   * @param {object[]} data
+   * @param {object} elemProps
    * @return {thead}
    */
-  renderHeader (columns, data) {
-    const { elemProps = {} } = this.props
+  renderHeader (columns, data, elemProps) {
     const { thead: theadProps, tr: trProps, th: thProps } = elemProps
+    const { evalElemProps, mergeProps } = this.constructor
 
     return (
-      <thead {...this.constructor.normalizeElemProps(theadProps, data, columns)}>
-        <tr {...this.constructor.normalizeElemProps(trProps, true, null, 0, data, columns)}>
-          {map(columns, col => {
-            return React.isValidElement(col.header)
-              ? React.cloneElement(
-                col.header,
-                {
-                  key: col.key,
-                  ...this.constructor.normalizeElemProps(
-                    elemProps[col.header.type || 'th'],
-                    col,
-                    data,
-                    columns
-                  ),
-                  ...(col.props || {}),
-                  ...(col.thProps || {})
-                }
-              )
-              : <th
-                key={col.key}
-                {...this.constructor.normalizeElemProps(thProps, col, data, columns)}
-                {...(col.props || {})}
-                {...(col.thProps || {})}
-              >
-                {col.title}
-              </th>
-          })}
+      <thead {...evalElemProps(theadProps, data, columns)}>
+        <tr {...evalElemProps(trProps, true, null, 0, data, columns)}>
+          {map(columns, col =>
+            <th key={col.name} {...mergeProps(
+              evalElemProps(thProps, col, data, columns),
+              evalElemProps(col.props, col, data, columns),
+              evalElemProps(col.thProps, col, data, columns)
+            )}>
+              {col.title}
+            </th>
+          )}
         </tr>
       </thead>
     )
@@ -161,12 +109,14 @@ export default class TableFactory extends React.Component {
    * @param {object[]} columns
    * @param {object[]} data
    * @param {bool} header
+   * @param {object} elemProps
    * @return {tbody}
    */
-  renderBody (columns, data, header) {
+  renderBody (columns, data, header, elemProps) {
     // Extra props
-    const { id, elemProps = {} } = this.props
+    const { id } = this.props
     const { tbody: tbodyProps, tr: trProps, td: tdProps } = elemProps
+    const { evalElemProps, mergeProps } = this.constructor
 
     const id_ = (row, index) =>
       isFunction(id)
@@ -174,23 +124,22 @@ export default class TableFactory extends React.Component {
         : (id && row[id] ? row[id] : index)
 
     return (
-      <tbody {...this.constructor.normalizeElemProps(tbodyProps, data, columns)}>
+      <tbody {...evalElemProps(tbodyProps, data, columns)}>
         {map(data, (row, index) =>
           <tr
             key={id_(row, index)}
             onClick={this.handleRowClick.bind(this, row)}
-            {...this.constructor.normalizeElemProps(trProps, false, row, index, data, columns)}
+            {...evalElemProps(trProps, false, row, index, data, columns)}
           >
             {columns.map(col =>
-              <td
-                key={col.key}
-                {...this.constructor.normalizeElemProps(tdProps, col, row, index, data, columns)}
-                {...(col.props || {})}
-                {...(col.tdProps || {})}
-              >
+              <td key={col.name} {...mergeProps(
+                evalElemProps(tdProps, col, row, index, data, columns),
+                evalElemProps(col.props, col, row, index, data, columns),
+                evalElemProps(col.tdProps, col, row, index, data, columns)
+              )}>
                 {col.render
                   ? col.render(row, col, index, data, columns)
-                  : row[col.key]
+                  : row[col.name]
                 }
               </td>
             )}
@@ -201,49 +150,203 @@ export default class TableFactory extends React.Component {
   }
 
   /**
+   * Parse children for custom props / column definition
+   *
+   * @param {any} children
+   * @param {object} columns
+   * @param {object} elemProps
+   * @param {string} parent Optional parent type
+   */
+  static parseChildren (
+    children,
+    columns,
+    elemProps,
+    parent
+  ) {
+    return React.Children.map(children, el => {
+      // Ignore?
+      if (!React.isValidElement(el)) return
+
+      const { type, props } = el
+
+      // Merge simple props
+      const simpleProps = ['table', 'thead', 'tbody', 'td']
+      if (simpleProps.indexOf(type) !== -1) {
+        elemProps[type] = this.defaultProps(
+          omit(props, ['children']),
+          elemProps[type]
+        )
+
+      // Parse columns
+      } else if (type === 'th') {
+        const { name, children: childs, ...props_ } = props
+
+        // Parse specific column (with name)
+        // If children are given use these as title
+        if (isString(name)) {
+          // New or existing columns?
+          let index = findIndex(columns, {name})
+          if (index === -1) {
+            const { props, thProps, tdProps, title, render, ...rest } = props_
+            columns.push(merge(
+              {props, tdProps, title, render, name, thProps: {
+                ...thProps,
+                ...rest
+              }},
+              childs ? {title: childs} : {}
+            ))
+          } else {
+            columns[index] = merge(
+              {thProps: props_},
+              childs ? {title: childs} : {},
+              columns[index] || {}
+            )
+          }
+
+        // Or parse the general th props
+        } else {
+          elemProps[type] = this.defaultProps(
+            props_,
+            elemProps[type]
+          )
+        }
+
+      // Parse row
+      } else if (type === 'tr') {
+        const old = elemProps[type]
+        elemProps[type] = (header, ...args) => {
+          // Specific props for header?
+          if (header && parent === 'thead') {
+            return this.mergeProps(
+              this.evalElemProps(old, header, ...args),
+              omit(props, 'children')
+            )
+
+          // Specific props for the body?
+          } else if (!header && parent === 'tbody') {
+            return this.mergeProps(
+              this.evalElemProps(old, header, ...args),
+              omit(props, 'children')
+            )
+
+          // Type mismatch?
+          } else if (parent === 'tbody' || parent === 'tbody') {
+            return this.evalElemProps(old, header, ...args)
+
+          // Or just merge
+          } else {
+            return this.mergeProps(
+              omit(props, 'children'),
+              this.evalElemProps(old, header, ...args),
+            )
+          }
+        }
+      }
+
+      // Recursively continue
+      this.parseChildren(props.children, columns, elemProps, el.type)
+    })
+  }
+
+  /**
+   * Specify default props (which will be overwritten by 'elemProps' props)
+   *
+   * Returns a props function that will return the new props merged with the
+   * original elemProp for the element.
+   *
+   * @param {object} props
+   * @param {object}|{function}|{null} originalProps
+   * @return {function}
+   */
+  static defaultProps (props, originalProps) {
+    return (...args) => this.mergeProps(
+      props || {},
+      this.evalElemProps(originalProps, ...args)
+    )
+  }
+
+  /**
+   * Merge props (and merge className appropiately)
+   *
+   * @param {object} ...props
+   */
+  static mergeProps (...props) {
+    const classNames = []
+    const newProps = {}
+    forEach(props, props => {
+      const { className, ...rest } = props
+      if (isString(className)) classNames.push(className)
+      merge(newProps, rest)
+    })
+    if (classNames.length > 0) {
+      newProps.className = classNames.join(' ')
+    }
+    return newProps
+  }
+
+  /**
    * Render the table
    *
    * @return {table}
    */
   render () {
-    const { columns, data, elemProps = {}, header = true, ...rest } = this.props
-    const { table: tableProps } = elemProps
+    // Prepare vars / static helpers
+    const {
+      columns,
+      data,
+      elemProps = {},
+      header = true,
+      children,
+      ...rest
+    } = this.props
+    const {
+      evalElemProps,
+      normalizeColumns,
+      normalizeData
+    } = this.constructor
+    let elemProps_ = {...elemProps}
+
+    // Normalize input
+    let columns_ = normalizeColumns(columns || {})
+    const data_ = normalizeData(data)
+
+    // Parse chilren
+    this.constructor.parseChildren(
+      children,
+      columns_,
+      elemProps_
+    )
+
+    // No columns?
+    if (size(columns_) === 0) {
+      throw new Error(
+        'No columns specified, specify them either by the columns prop ' +
+        'or by passing <th>\'s (with a name prop)'
+      )
+    }
+
+    // Prepare props
+    const { table: tableProps } = elemProps_
     const props = omit(rest, [
       'onRowClick',
       'id'
     ])
 
-    // Normalize input
-    const normalizedColumns = this.constructor.normalizeColumns(columns)
-    const normalizedData = this.constructor.normalizeData(data)
-
+    // Render
+    const thead = header && this.renderHeader(columns_, data_, elemProps_)
+    const tbody = this.renderBody(columns_, data_, header, elemProps_)
     return (
       <table
-        {...this.constructor.normalizeElemProps(
-          tableProps,
-          normalizedData,
-          normalizedColumns
-        )}
+        {...evalElemProps(tableProps, data_, columns_)}
         {...props}
       >
-        {header ? this.renderHeader(normalizedColumns, normalizedData) : null}
-        {this.renderBody(normalizedColumns, normalizedData, header)}
+        {thead}
+        {tbody}
       </table>
     )
   }
 }
 
-/**
- * Prop types
- *
- * This element supports the following props:
- * - onRowClick  - a callback(e, row) triggered when a row is clicked
- * - header      - render thead or not (enabled by default)
- * - id          - key to use from the data rows
- * - columns     - column data structure (see {TableFactory})
- * - data        - the row data (see {TableFactory})
- * - elemProps   - key/value pair with extra classes
- */
 TableFactory.propTypes = {
   onRowClick: PropTypes.func,
   header: PropTypes.bool,
@@ -251,9 +354,7 @@ TableFactory.propTypes = {
   columns: PropTypes.oneOfType([
     PropTypes.array,
     PropTypes.object
-    // PropTypes.objectOf(columnType),
-    // PropTypes.arrayOf(columnType)
-  ]).isRequired,
+  ]),
   data: PropTypes.oneOfType([
     PropTypes.objectOf(PropTypes.object),
     PropTypes.arrayOf(PropTypes.object)
@@ -263,17 +364,3 @@ TableFactory.propTypes = {
     PropTypes.func
   ]))
 }
-
-const columnType = PropTypes.oneOfType([
-  PropTypes.object,
-  // PropTypes.shape({
-  //   key: PropTypes.any,
-  //   title: PropTypes.string,
-  //   props: PropTypes.object,
-  //   tdProps: PropTypes.object,
-  //   thProps: PropTypes.object,
-  //   header: PropTypes.element, // th
-  //   render: PropTypes.func
-  // }),
-  PropTypes.string
-])
