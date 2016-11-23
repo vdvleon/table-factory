@@ -86,7 +86,7 @@ The `render` function has the following signature: `(row, col, index, data, colu
 
 The prop `elemProps` is an object where the keys are either: 'table', 'thead',
 'tbody', 'tr', 'th' or 'td'. The values are either objects which specify the
-props of the element of a callback function which should return an object.
+props of the element or a callback function which should return an object.
 The arguments for the callback function vary per element type. The signatures
 are as following:
 
