@@ -274,7 +274,7 @@ export default class TableFactory extends React.Component {
     const classNames = []
     const newProps = {}
     forEach(props, props => {
-      const { className, ...rest } = props
+      const { className, ...rest } = props || {}
       if (isString(className)) classNames.push(className)
       merge(newProps, rest)
     })
