@@ -260,7 +260,7 @@ export default class TableFactory extends React.Component {
    */
   static defaultProps (props, originalProps) {
     return (...args) => this.mergeProps(
-      props || {},
+      isPlainObject(props) ? props : {},
       this.evalElemProps(originalProps, ...args)
     )
   }
