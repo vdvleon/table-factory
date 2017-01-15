@@ -172,7 +172,7 @@ export default class TableFactory extends React.Component {
       // Merge simple props
       const simpleProps = ['table', 'thead', 'tbody', 'td']
       if (simpleProps.indexOf(type) !== -1) {
-        elemProps[type] = this.defaultProps(
+        elemProps[type] = this.propsWithDefault(
           omit(props, ['children']),
           elemProps[type]
         )
@@ -205,7 +205,7 @@ export default class TableFactory extends React.Component {
 
         // Or parse the general th props
         } else {
-          elemProps[type] = this.defaultProps(
+          elemProps[type] = this.propsWithDefault(
             props_,
             elemProps[type]
           )
@@ -258,7 +258,7 @@ export default class TableFactory extends React.Component {
    * @param {object}|{function}|{null} originalProps
    * @return {function}
    */
-  static defaultProps (props, originalProps) {
+  static propsWithDefault (props, originalProps) {
     return (...args) => this.mergeProps(
       isPlainObject(props) ? props : {},
       this.evalElemProps(originalProps, ...args)
@@ -297,6 +297,10 @@ export default class TableFactory extends React.Component {
       elemProps = {},
       header = true,
       children,
+      pagination: {
+        page,
+        perPage = 0
+      },
       ...rest
     } = this.props
     const {
@@ -308,7 +312,10 @@ export default class TableFactory extends React.Component {
 
     // Normalize input
     let columns_ = normalizeColumns(columns || {})
-    const data_ = normalizeData(data)
+    const normalizedData = normalizeData(data)
+    const slicedData = perPage > 0
+      ? normalizedData.slice(perPage * (page - 1), perPage * page)
+      : normalizedData
 
     // Parse chilren
     this.constructor.parseChildren(
@@ -333,11 +340,11 @@ export default class TableFactory extends React.Component {
     ])
 
     // Render
-    const thead = header && this.renderHeader(columns_, data_, elemProps_)
-    const tbody = this.renderBody(columns_, data_, header, elemProps_)
+    const thead = header && this.renderHeader(columns_, slicedData, elemProps_)
+    const tbody = this.renderBody(columns_, slicedData, header, elemProps_)
     return (
       <table
-        {...evalElemProps(tableProps, data_, columns_)}
+        {...evalElemProps(tableProps, slicedData, columns_)}
         {...props}
       >
         {thead}
@@ -345,6 +352,10 @@ export default class TableFactory extends React.Component {
       </table>
     )
   }
+}
+
+TableFactory.defaultProps = {
+  pagination: {}
 }
 
 TableFactory.propTypes = {
@@ -362,5 +373,9 @@ TableFactory.propTypes = {
   elemProps: PropTypes.objectOf(PropTypes.oneOfType([
     PropTypes.object,
     PropTypes.func
-  ]))
+  ])),
+  pagination: PropTypes.shape({
+    page: PropTypes.number,
+    perPage: PropTypes.number
+  })
 }
