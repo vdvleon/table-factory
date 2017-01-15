@@ -57,8 +57,8 @@ export default class TableFactory extends React.Component {
   /**
    * Evaluate elem props
    *
-   * The the elem props is function, call it using the given arguments, return
-   * an props object otherwise.
+   * If the elem props is a function, call it using the given arguments, return
+   * a props object otherwise.
    *
    * @param {object}|{function}|{null} props
    * @param {any}... args
